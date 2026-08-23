@@ -5,10 +5,10 @@ harness is the deliverable** and the chat interface is only what makes it demoab
 repository measures its own retrieval and answer quality on every commit and publishes
 an ablation table — including the arms that lost.
 
-**Status: Phase 4 — reranked hybrid retrieval.** Dense (bge-small over HNSW) and lexical
-(`ts_rank_cd`) arms behind one `retrieve()` entry point, fused with Reciprocal Rank
-Fusion and reordered by a `bge-reranker-base` cross-encoder, with refusal below a score
-floor. Generation is next.
+**Status: Phase 5 — answers with enforced citations.** Hybrid retrieval feeds a generator
+that must bind every factual sentence to a `chunk_id`, and refuses without calling the
+model when retrieval finds nothing good enough. The golden set and the evaluation harness
+— the reason this repository exists — are next.
 
 ---
 
@@ -193,15 +193,69 @@ where it becomes an ablation arm rather than a hunch.
 
 ### Refusal
 
-Below `score_floor` the result comes back empty with `reason="below_score_floor"`, and
-Phase 5 declines to call the LLM at all. Refusal is a measured behaviour, not an error
-path — the golden set scores how often it was the right call.
+Below `score_floor` the result comes back empty with `reason="below_score_floor"`, and the
+generator declines to call the model at all — an out-of-corpus question costs **zero
+tokens and zero dollars**. Refusal is a measured behaviour, not an error path.
 
-Scores are raw logits (roughly [-11, +11], zero being neutral), not probabilities. A
-sigmoid would put every score above zero and silently turn the default floor of 0.0 into
-"never refuse". The consequence, stated rather than discovered: **an arm with reranking
-disabled cannot refuse on score**, because cosine similarity and `ts_rank_cd` are on
-scales no single floor value can serve.
+**The floor does not work as specified, and this is the most useful thing measured so
+far.** The plan sets `score_floor = 0.0` on the assumption that the reranker emits logits
+centred on zero. It does not: `sentence_transformers.CrossEncoder` applies `Sigmoid()` to
+the single-label head, so scores are probabilities in [0, 1] and a floor of 0.0 refuses
+nothing. Worse, the two distributions overlap:
+
+```
+top rerank score, questions the corpus CAN answer     0.062  0.119  0.157  0.804  0.998
+top rerank score, questions it CANNOT                 0.000  0.002  0.011  0.152  0.674
+```
+
+At `score_floor = 0.05` the clearly-irrelevant questions refuse and nothing answerable is
+falsely refused — but *"What were Tesla's Q3 2025 delivery numbers?"* scores **0.674**,
+above three of the five real questions, and is answered rather than refused. No threshold
+separates them.
+
+Following that false positive to its cause is instructive: the Tesla question matches a
+mangled results table — `(5+3) R INDOTOD … T 2.63/4.06 avg R Multimodal` — that
+superficially reads as "numbers". So the miss is partly a **chunk-quality** problem, not
+purely a threshold one, which points back at the table extraction rather than at the
+reranker.
+
+0.05 is therefore labelled provisional. Ten hand-picked questions are enough to reject
+0.0; they are not enough to call 0.05 correct. Phase 6's `answerable: false` items exist
+to set this properly, and Phase 7 sweeps it against measured refusal accuracy.
+
+One consequence stated rather than discovered: **an arm with reranking disabled cannot
+refuse on score**, because cosine similarity and `ts_rank_cd` are on scales no single
+floor value can serve.
+
+## Generation
+
+Answers are produced by `claude-haiku-4-5` behind an `LLMClient` protocol. The protocol is
+the reason the whole test suite — including every refusal, retry and cost assertion — runs
+with no key, no network and no spend against a scripted fake, while production is one
+small class behind the same interface.
+
+- **No answer without a citation.** Every factual sentence must end with `[n]` markers.
+  The answer is parsed, each marker resolved against the blocks actually sent, and any
+  unsupported sentence triggers **one** correction pass quoting the offending sentences.
+  If it still fails, the answer is returned flagged `uncited=true` rather than presented
+  as sourced. Out-of-range markers (`[7]` when five blocks were sent) are recorded as
+  invalid, because an answer citing a block that does not exist looks sourced and is not.
+- **Prompts are versioned files**, not inline strings — a prompt change moves every answer
+  metric the way a chunk-size change moves every retrieval metric, so it has to be
+  nameable. `prompt_version` is recorded on every result.
+- **Cost is computed in one place** from a published rates table, and an unpriced model
+  raises rather than silently costing zero.
+- **`GenerationConfig` is separate from `RetrievalConfig`.** The retrieval model is the
+  ablation axis for retrieval; folding the generation model and prompt version into it
+  would make every retrieval arm carry fields that had nothing to do with it.
+
+**There is no `temperature`, and that departs from the plan.** The Anthropic SDK removed
+sampling controls — `temperature`, `top_p` and `top_k` are absent from `messages.create`
+in 1.0.0, and current models reject them with a 400. They could be forced through
+`extra_body` for older models only, gated on the model id, buying a knob that breaks on
+the next model change. What the plan actually needs is protected anyway: retrieval metrics
+involve no sampling, and Phase 7 makes answer metrics stable by caching judgements rather
+than by pretending generation is deterministic.
 
 ## Layout
 
@@ -227,7 +281,7 @@ what gets measured, what counts as honest naming, and what is not allowed to dri
 - [x] **2** Dense retrieval — bge-small embeddings, HNSW
 - [x] **3** Lexical + RRF fusion
 - [x] **4** Cross-encoder reranking
-- [ ] **5** Generation, citations, refusal
+- [x] **5** Generation, citations, refusal
 - [ ] **6** Golden set
 - [ ] **7** Eval harness and ablation table
 - [ ] **8** Frontend
