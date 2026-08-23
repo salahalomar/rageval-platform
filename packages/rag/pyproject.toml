@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Ingestion, retrieval and generation library. Importable from a script, a notebook, the API and the eval runner identically."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "anthropic>=1.0.0",
     "httpx>=0.28",
     "huggingface-hub>=0.26",
     "pgvector>=0.3",
