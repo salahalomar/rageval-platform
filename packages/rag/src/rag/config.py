@@ -18,6 +18,55 @@ from typing import Any, ClassVar, Literal
 from pydantic import BaseModel
 
 
+class GenerationConfig(BaseModel, frozen=True):
+    """Everything configurable about turning retrieved context into an answer.
+
+    Separate from `RetrievalConfig` deliberately. That model is the ablation axis for
+    retrieval, and its every field is swept by the Phase 7 matrix; generation has its own
+    axes -- model, temperature, prompt version -- which vary independently. Folding them
+    together would make each retrieval arm carry fields that had nothing to do with it,
+    and would misname the thing. An evaluation result embeds both.
+    """
+
+    # Pinned to an exact published model id. ENGINEERING.md names claude-haiku for
+    # generation; this is that model's current identifier. Never carries a date suffix --
+    # the id below is complete, and appending one produces a model that does not exist.
+    model: str = "claude-haiku-4-5"
+
+    # There is deliberately no `temperature` field, and that is a departure from the
+    # plan, which specifies temperature 0 for determinism.
+    #
+    # The Anthropic SDK removed sampling controls: `temperature`, `top_p` and `top_k` are
+    # absent from `messages.create` in 1.0.0, and the current model family rejects them at
+    # the API with a 400. They could be forced through `extra_body` for older models only,
+    # gated on the model id -- which buys a knob that breaks the moment the model changes,
+    # in exchange for a determinism guarantee sampling never fully provided anyway.
+    #
+    # What is actually protected: ENGINEERING.md requires two runs of `make eval` to agree
+    # on *retrieval* metrics, and those involve no sampling at all. Answer metrics are
+    # LLM-judged and were never going to be bit-identical; Phase 7 makes re-runs cheap and
+    # stable by caching judgements on (item, answer hash, judge model, prompt version)
+    # rather than by pretending generation is deterministic.
+
+    # Deliberately small. Answers here are a few sentences bound to citations, not
+    # essays; a large ceiling would only pay for the model to wander past the evidence.
+    max_tokens: int = 1024
+
+    # Prompt text lives in a versioned file rather than inline, because a prompt change
+    # is an ablation arm exactly like a chunk size is, and a result that cannot name the
+    # prompt that produced it is not reproducible.
+    prompt_version: str = "v1"
+
+    # One correction attempt when the model returns uncited claims. Beyond one, the cost
+    # of retrying exceeds the value: a model that ignores the citation instruction twice
+    # is not going to comply on the third pass, and the answer is flagged instead.
+    max_citation_retries: int = 1
+
+    def fingerprint(self) -> dict[str, Any]:
+        """The generation settings recorded alongside every answer and eval result."""
+        return self.model_dump()
+
+
 class RetrievalConfig(BaseModel, frozen=True):
     """One point in the retrieval configuration space.
 
@@ -84,7 +133,29 @@ class RetrievalConfig(BaseModel, frozen=True):
     # Phase 7 sweeps it.
     rerank_top_n: int = 50
     final_top_k: int = 5
-    score_floor: float = 0.0  # below this -> refuse
+
+    # Below this reranker score, retrieval refuses and no LLM call is made.
+    #
+    # The specified default of 0.0 cannot work and is not used. The reranker's scores are
+    # sigmoid probabilities in [0, 1] -- sentence-transformers applies the activation
+    # itself -- so a floor of 0.0 refuses nothing at all.
+    #
+    # 0.05 is measured, over five questions this corpus can answer and five it cannot:
+    #
+    #     answerable        0.062  0.119  0.157  0.804  0.998
+    #     unanswerable      0.000  0.002  0.011  0.152  0.674
+    #
+    # At 0.05 the three clearly-irrelevant questions are refused and nothing answerable
+    # is falsely refused. It is a weak default and is labelled as one: the two
+    # distributions **overlap** -- "What were Tesla's Q3 2025 delivery numbers?" scores
+    # 0.674, above three of the five real questions -- so no threshold separates them
+    # cleanly. A cross-encoder rates superficially topical text highly whether or not the
+    # corpus contains the answer.
+    #
+    # This is the number Phase 6's `answerable: false` items exist to set properly, and
+    # Phase 7 sweeps it against measured refusal accuracy. Ten hand-picked questions is
+    # enough to reject 0.0; it is not enough to call 0.05 correct.
+    score_floor: float = 0.05
 
     # Fields that change what a chunk *is*, as opposed to how chunks are searched.
     # Listed once, here, because two things depend on getting the set exactly right:
