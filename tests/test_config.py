@@ -23,7 +23,10 @@ def test_defaults_match_the_specification() -> None:
     assert c.rerank_enabled is True
     assert c.rerank_model == "BAAI/bge-reranker-base"
     assert c.final_top_k == 5
-    assert c.score_floor == pytest.approx(0.0)
+    # Deliberately not the specified 0.0. The reranker returns sigmoid probabilities in
+    # [0, 1], so a floor of 0.0 refuses nothing; 0.05 is the measured replacement and the
+    # reasoning is recorded on the field itself.
+    assert c.score_floor == pytest.approx(0.05)
 
 
 def test_config_is_frozen() -> None:

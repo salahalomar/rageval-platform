@@ -106,4 +106,5 @@ def test_committed_migrations_are_discoverable() -> None:
         "002_core_schema",
         "003_embedding_tables",
         "004_embedding_chunking_key",
+        "005_query_log_answers",
     ]
