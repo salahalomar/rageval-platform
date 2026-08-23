@@ -10,11 +10,13 @@ system, and the ablation table shows both columns rather than only the flatterin
 
 Two things here are worth stating rather than assuming.
 
-**Scores are raw logits, not probabilities.** bge-reranker-base emits roughly [-11, +11],
-where 0 is the neutral point. `score_floor` compares against that directly, so the default
-of 0.0 means "refuse when even the best passage is below neutral relevance". Squashing
-through a sigmoid would put every score above zero and silently turn that default into
-"never refuse".
+**Scores are probabilities in [0, 1], not logits.** The model head emits a single logit,
+and `sentence_transformers.CrossEncoder` applies `Sigmoid()` to it by default for
+single-label models -- so what comes back here is already squashed. This was checked
+rather than assumed, and the assumption it replaced was wrong in a way that mattered: a
+`score_floor` of 0.0 against a [0, 1] score means *never refuse*, which is exactly the
+failure that reasoning about logits was supposed to avoid. Measured floors and their
+observed separation live in `RetrievalConfig.score_floor`.
 
 **The 512-token window truncates.** The model encodes `[CLS] query [SEP] passage [SEP]`,
 and chunks in this corpus have a median of 477 tokens. Pairs therefore overflow, and the
