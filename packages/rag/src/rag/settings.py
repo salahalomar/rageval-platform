@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://rag:rag@localhost:5432/rag"
     log_level: str = "INFO"
 
+    # Credentials for the generation providers. Secrets, so they live here and never in
+    # GenerationConfig -- which is serialised verbatim into every answer log and every
+    # evaluation result. A key in a result file is a key in the repository.
+    anthropic_api_key: str = ""
+    llm_api_key: str = ""
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
