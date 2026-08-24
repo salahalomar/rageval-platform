@@ -5,10 +5,10 @@ harness is the deliverable** and the chat interface is only what makes it demoab
 repository measures its own retrieval and answer quality on every commit and publishes
 an ablation table — including the arms that lost.
 
-**Status: Phase 6 — the golden set.** The evaluation ground truth: stratified sampling,
-a no-context filter that discards questions answerable without retrieval, human
-verification, and 15 hand-written hard cases. The pipeline is built and priced; the two
-steps that call a paid API have not been run. The metrics harness is next.
+**Status: Phase 7 — the evaluation harness.** Retrieval metrics, the ablation runner, a
+regression gate and a judge that is built and priced but unrun. The table below is a
+**harness smoke test, not a quality result** — read the caveat under it before quoting
+any number from it.
 
 ---
 
@@ -227,6 +227,82 @@ One consequence stated rather than discovered: **an arm with reranking disabled 
 refuse on score**, because cosine similarity and `ts_rank_cd` are on scales no single
 floor value can serve.
 
+## The ablation table
+
+> **These numbers are not a quality result and must not be quoted as one.** The verified
+> golden set does not exist yet — building it needs paid API calls that have not been
+> made — so this runs against **11 unverified hand-written drafts**. Eleven items means
+> one question changing answer moves Recall@5 by nine points. What the table demonstrates
+> is that the harness runs end to end, deterministically, on the real corpus.
+
+<!-- ABLATION-TABLE:START -->
+
+| Arm           | R@1   | R@5   | MRR@10 | nDCG@10 | Refusal acc. | p95 ms | n  |
+|---------------|-------|-------|--------|---------|--------------|--------|----|
+| lexical-only  | 0.182 | 0.439 | 0.318  | 0.329   | 0.000        | 173    | 11 |
+| dense-small   | 0.167 | 0.561 | 0.442  | 0.416   | 0.000        | 151    | 11 |
+| hybrid-rrf    | 0.258 | 0.621 | 0.495  | 0.476   | 0.000        | 343    | 11 |
+| hybrid-rerank | 0.545 | 0.848 | 0.780  | 0.755   | 0.250        | 7729   | 11 |
+| rrf-k20       | 0.545 | 0.848 | 0.780  | 0.755   | 0.250        | 7072   | 11 |
+| rrf-k120      | 0.545 | 0.848 | 0.780  | 0.755   | 0.250        | 7142   | 11 |
+
+<!-- ABLATION-TABLE:END -->
+
+The table is generated from the committed result JSONs and injected between those
+markers by `make report`. It is never hand-edited, so every number traces to a file
+recording the configuration, the git commit and the golden set that produced it.
+
+**Two arms that did nothing, reported in place.** `rrf-k20` and `rrf-k120` are byte-for-byte
+identical to `hybrid-rerank` on every metric. That is not a bug: RRF's `k` reorders the
+fused list, but the cross-encoder then rescores the top 50 from scratch, so the fusion
+order it started from is almost entirely erased. **The RRF k sweep is a no-op once
+reranking is enabled** — worth knowing before spending effort tuning it, and exactly the
+kind of arm a table that only reported winners would have quietly dropped.
+
+**Reranking is where the quality is, and where the latency is.** R@1 more than doubles
+(0.258 → 0.545) and R@5 goes 0.621 → 0.848 — while p95 goes from 343ms to 7.7 seconds, a
+22× cost. The ablation table exists to show both columns.
+
+**Refusal accuracy is 0.25**: one of four unanswerable items refused, consistent with the
+overlapping score distributions measured in Phase 5.
+
+### Determinism, verified
+
+Two runs on one commit produce identical metrics, identical rankings, and identical
+resolved ground truth. Checked by running the matrix twice into separate directories and
+diffing; the JSON files differ only in `started_at` and `duration_s`, which are not
+metrics.
+
+### Ground truth survives re-chunking
+
+The golden set names relevant chunks by id, and the chunk-size sweep produces entirely
+different ids — so scoring the 256-token arm against 512-token ids would report zero
+recall for every question, an artefact of the identifier scheme rather than a result.
+`eval/relevance.py` resolves each golden id once to a `(paper_id, char_span)` claim about
+where the answer lives, then re-resolves it against whatever chunking an arm actually
+uses. Without that, three of the ten arms are unrunnable.
+
+### What the judge costs
+
+Answer metrics need a model and have not been run. `make cost` prices them from the
+context retrieval actually returns:
+
+```
+generation   60 calls   181,260 in    9,600 out   $0.23
+judging     180 calls   369,000 in   34,800 out   $0.54
+TOTAL for one judged run: $0.77   →  ~$23/month nightly
+```
+
+At the full 80-item golden set that becomes roughly **$4 per run, $120 a month** running
+nightly. Judgements are cached on `(item, answer hash, judge model, prompt version)`, so
+changing a retrieval parameter re-judges only the answers that actually changed.
+
+**No faithfulness number appears anywhere in this README, and none should until Cohen's κ
+does.** The judge shares a model family with the generator; self-preference bias in LLM
+judges is well documented. `make kappa` compares the judge against hand labels a human
+writes — and nothing can generate those labels, because a judge validated against its own
+output is a tautology.
+
 ## The golden set
 
 Ground truth for every number this repository will publish. The protocol, the
@@ -328,7 +404,7 @@ what gets measured, what counts as honest naming, and what is not allowed to dri
 - [x] **4** Cross-encoder reranking
 - [x] **5** Generation, citations, refusal
 - [x] **6** Golden set
-- [ ] **7** Eval harness and ablation table
+- [x] **7** Eval harness and ablation table
 - [ ] **8** Frontend
 - [ ] **9** Ship
 
