@@ -4,7 +4,8 @@ UV := uv
 MIGRATIONS_DIR := infra/migrations
 
 .DEFAULT_GOAL := help
-.PHONY: help dev down migrate migrate-status lint fmt typecheck test check logs psql clean
+.PHONY: help dev down migrate migrate-status lint fmt typecheck test test-nomodel check \
+        logs psql clean golden golden-dry-run verify
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -37,6 +38,17 @@ migrate: ## Apply pending SQL migrations (forward-only)
 
 migrate-status: ## List applied and pending migrations without applying anything
 	$(UV) run python -m rag.index.migrate --dir $(MIGRATIONS_DIR) --status
+
+# --- evaluation --------------------------------------------------------------
+
+golden-dry-run: ## Price the golden-set build without calling any API
+	$(UV) run python -m eval.generate_golden --dry-run
+
+golden: ## Generate golden-set candidates (COSTS MONEY — run golden-dry-run first)
+	$(UV) run python -m eval.generate_golden
+
+verify: ## Review candidates by hand; the only thing that writes v1.jsonl
+	$(UV) run python -m eval.verify_cli --reviewer "$${REVIEWER:-$$(git config user.name)}"
 
 # --- quality ----------------------------------------------------------------
 

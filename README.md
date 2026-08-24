@@ -5,10 +5,10 @@ harness is the deliverable** and the chat interface is only what makes it demoab
 repository measures its own retrieval and answer quality on every commit and publishes
 an ablation table — including the arms that lost.
 
-**Status: Phase 5 — answers with enforced citations.** Hybrid retrieval feeds a generator
-that must bind every factual sentence to a `chunk_id`, and refuses without calling the
-model when retrieval finds nothing good enough. The golden set and the evaluation harness
-— the reason this repository exists — are next.
+**Status: Phase 6 — the golden set.** The evaluation ground truth: stratified sampling,
+a no-context filter that discards questions answerable without retrieval, human
+verification, and 15 hand-written hard cases. The pipeline is built and priced; the two
+steps that call a paid API have not been run. The metrics harness is next.
 
 ---
 
@@ -227,6 +227,51 @@ One consequence stated rather than discovered: **an arm with reranking disabled 
 refuse on score**, because cosine similarity and `ts_rank_cd` are on scales no single
 floor value can serve.
 
+## The golden set
+
+Ground truth for every number this repository will publish. The protocol, the
+stratification, the cost and an honest limitations section live in
+[`eval/golden/README.md`](eval/golden/README.md).
+
+**Status: built and priced, not yet run.** Sampling, deduplication, human verification and
+the 15 hand-written hard cases cost nothing and are done. The two steps that call a paid
+API — question generation and the no-context filter — have not been executed, so
+`v1.jsonl` does not exist and **no retrieval or answer quality number is claimed anywhere
+in this README.**
+
+```bash
+make golden-dry-run    # samples, stratifies and prices the run. Calls nothing.
+```
+
+```
+requested 200   returned 200   distinct papers 107   max per paper 3
+  method 30.0%   results 30.0%   abstract 15.0%   limitations 10.0%
+
+stage                       calls     in tok   out tok      usd
+generate question             200    178,000    24,000   0.2980
+no-context filter             200     33,800    16,000   0.1138
+TOTAL                         400    211,800    40,000   0.4118
+```
+
+Three things about the design are worth stating:
+
+- **The no-context filter is what makes an LLM-generated set defensible.** Every question
+  is asked again with zero retrieval context, and anything the model answers from
+  parametric knowledge is discarded — it tests what the model knows, not what the system
+  retrieved. The model's parametric answer is stored on the candidate so a reviewer can
+  audit the filter rather than trust it.
+- **No automated step can write `v1.jsonl`.** Only `eval.verify_cli` does, one keypress at
+  a time, stamping `verified_by` and `verified_at`. A script that could write it would make
+  "human-verified" worthless.
+- **Sampling is stratified and seeded.** Uniform sampling would produce a set shaped like
+  the corpus, which is 21% introductions — questions every configuration answers, so the
+  headline number would be flattering and would move for no arm in the ablation.
+
+One hard case is deliberately kept although it is known to fail. `h-009` — *"What were
+Tesla's Q3 2025 delivery numbers?"* — scores 0.674 on the reranker, above three genuinely
+answerable questions, so the current score floor answers it instead of refusing. It is in
+the set precisely because it is the case the floor gets wrong.
+
 ## Generation
 
 Answers are produced by `claude-haiku-4-5` behind an `LLMClient` protocol. The protocol is
@@ -282,7 +327,7 @@ what gets measured, what counts as honest naming, and what is not allowed to dri
 - [x] **3** Lexical + RRF fusion
 - [x] **4** Cross-encoder reranking
 - [x] **5** Generation, citations, refusal
-- [ ] **6** Golden set
+- [~] **6** Golden set — built and priced; generation not yet run
 - [ ] **7** Eval harness and ablation table
 - [ ] **8** Frontend
 - [ ] **9** Ship
