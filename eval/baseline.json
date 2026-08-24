@@ -1,0 +1,26 @@
+{
+  "config": {
+    "chunk_overlap_pct": 0.15,
+    "chunk_tokens": 512,
+    "contextual_headers": true,
+    "dense_enabled": true,
+    "dense_top_k": 50,
+    "drop_figure_only_pages": true,
+    "drop_references": true,
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "final_top_k": 5,
+    "fusion": "rrf",
+    "hnsw_ef_search": 400,
+    "lexical_enabled": true,
+    "lexical_top_k": 50,
+    "rerank_enabled": false,
+    "rerank_model": "BAAI/bge-reranker-base",
+    "rerank_top_n": 50,
+    "rrf_k": 60,
+    "score_floor": 0.05
+  },
+  "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+  "golden_file": "eval/golden/hard_cases.jsonl",
+  "items": 11,
+  "recall@5": 0.6212
+}
