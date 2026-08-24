@@ -5,7 +5,7 @@ MIGRATIONS_DIR := infra/migrations
 
 .DEFAULT_GOAL := help
 .PHONY: help dev down migrate migrate-status lint fmt typecheck test test-nomodel check \
-        logs psql clean golden golden-dry-run verify
+        logs psql clean golden golden-dry-run verify eval gate ablate report cost kappa
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -46,6 +46,24 @@ golden-dry-run: ## Price the golden-set build without calling any API
 
 golden: ## Generate golden-set candidates (COSTS MONEY — run golden-dry-run first)
 	$(UV) run python -m eval.generate_golden
+
+eval: ## Score the default configuration against the golden set (free, no API)
+	$(UV) run python -m eval.gate
+
+gate: ## Fail if retrieval regressed below eval/baseline.json (free, no API)
+	$(UV) run python -m eval.gate
+
+ablate: ## Run the full ablation matrix and print the table (free, no API)
+	$(UV) run python -m eval.ablate
+
+report: ## Regenerate the ablation table and inject it into the README
+	$(UV) run python -m eval.report --inject
+
+cost: ## Price a judged evaluation without calling anything
+	$(UV) run python -m eval.estimate
+
+kappa: ## Report judge-versus-human agreement from committed hand labels
+	$(UV) run python -m eval.judge_agreement
 
 verify: ## Review candidates by hand; the only thing that writes v1.jsonl
 	$(UV) run python -m eval.verify_cli --reviewer "$${REVIEWER:-$$(git config user.name)}"

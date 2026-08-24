@@ -64,3 +64,11 @@ jobs:
       # runs the full set.
       - name: Test
         run: make test-nomodel
+
+      # Retrieval-only, so it needs no paid API and no network. It skips rather than
+      # fails when this database has no corpus: failing a pull request because the
+      # evaluation environment was not seeded would train everyone to ignore the gate,
+      # and a gate people ignore protects nothing. Seeding CI with a reproducible corpus
+      # is the remaining work before this actually guards anything.
+      - name: Retrieval regression gate
+        run: make gate

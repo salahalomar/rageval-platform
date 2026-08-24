@@ -23,3 +23,7 @@ dist/
 
 # OS
 .DS_Store
+
+# The judge cache is a local artefact, not a result. It holds model output keyed by
+# answer hash and would grow without bound in the repository.
+eval/results/.judge_cache.sqlite
