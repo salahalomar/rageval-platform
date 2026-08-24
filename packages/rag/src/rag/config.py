@@ -28,25 +28,34 @@ class GenerationConfig(BaseModel, frozen=True):
     and would misname the thing. An evaluation result embeds both.
     """
 
-    # Pinned to an exact published model id. ENGINEERING.md names claude-haiku for
-    # generation; this is that model's current identifier. Never carries a date suffix --
-    # the id below is complete, and appending one produces a model that does not exist.
+    # Which client implementation serves this config. "anthropic" uses the vendor SDK;
+    # "openai_compatible" covers Groq, Cerebras, OpenRouter, Together and a local Ollama
+    # or llama.cpp server, all of which speak the same wire format and differ only by
+    # base_url. Recorded on every result, because two providers running nominally the
+    # same weights do not necessarily produce the same output.
+    provider: Literal["anthropic", "openai_compatible"] = "anthropic"
+
+    # Pinned to an exact published model id.
     model: str = "claude-haiku-4-5"
 
-    # There is deliberately no `temperature` field, and that is a departure from the
-    # plan, which specifies temperature 0 for determinism.
+    # Endpoint for the openai_compatible provider. A public URL, not a secret -- the API
+    # key lives in Settings and never appears in a result record. Ignored by the
+    # anthropic provider.
+    base_url: str | None = None
+
+    # Honoured by the openai_compatible provider and ignored by the anthropic one, which
+    # is a real asymmetry rather than an oversight.
     #
-    # The Anthropic SDK removed sampling controls: `temperature`, `top_p` and `top_k` are
-    # absent from `messages.create` in 1.0.0, and the current model family rejects them at
-    # the API with a 400. They could be forced through `extra_body` for older models only,
-    # gated on the model id -- which buys a knob that breaks the moment the model changes,
-    # in exchange for a determinism guarantee sampling never fully provided anyway.
+    # The Anthropic SDK removed sampling controls entirely: temperature, top_p and top_k
+    # are absent from messages.create in 1.0.0 and the current model family rejects them
+    # with a 400. OpenAI-compatible endpoints still accept temperature, so routing through
+    # one restores the determinism knob the plan asked for and the vendor SDK took away.
     #
-    # What is actually protected: ENGINEERING.md requires two runs of `make eval` to agree
-    # on *retrieval* metrics, and those involve no sampling at all. Answer metrics are
-    # LLM-judged and were never going to be bit-identical; Phase 7 makes re-runs cheap and
-    # stable by caching judgements on (item, answer hash, judge model, prompt version)
-    # rather than by pretending generation is deterministic.
+    # Either way, ENGINEERING.md's determinism requirement covers *retrieval* metrics,
+    # which involve no sampling at all. Answer metrics are LLM-judged and were never going
+    # to be bit-identical; Phase 7 keeps re-runs stable by caching judgements rather than
+    # by pretending generation is deterministic.
+    temperature: float = 0.0
 
     # Deliberately small. Answers here are a few sentences bound to citations, not
     # essays; a large ceiling would only pay for the model to wander past the evidence.
