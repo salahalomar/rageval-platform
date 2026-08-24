@@ -370,13 +370,48 @@ small class behind the same interface.
   ablation axis for retrieval; folding the generation model and prompt version into it
   would make every retrieval arm carry fields that had nothing to do with it.
 
-**There is no `temperature`, and that departs from the plan.** The Anthropic SDK removed
-sampling controls — `temperature`, `top_p` and `top_k` are absent from `messages.create`
-in 1.0.0, and current models reject them with a 400. They could be forced through
-`extra_body` for older models only, gated on the model id, buying a knob that breaks on
-the next model change. What the plan actually needs is protected anyway: retrieval metrics
-involve no sampling, and Phase 7 makes answer metrics stable by caching judgements rather
-than by pretending generation is deterministic.
+### Running it for free
+
+Generation is the only part of this system that costs money, and it does not have to.
+`LLMClient` has two implementations, selected by `GenerationConfig.provider`:
+
+| Provider | Covers | Cost |
+|---|---|---|
+| `anthropic` | Anthropic first-party | paid |
+| `openai_compatible` | Groq, Cerebras, OpenRouter, **and a local Ollama** | free tiers / free |
+
+Those four speak the same wire protocol, so they are one class differing only by
+`base_url` — **a local model is not a special case in the architecture, it is an
+endpoint.** Groq's free tier needs no card and allows 30 requests/minute and 1,000/day,
+which covers a 400-call golden-set build in one sitting.
+
+Two things this buys beyond the money:
+
+- **`temperature` works again.** The Anthropic SDK removed sampling controls entirely —
+  `temperature`, `top_p` and `top_k` are absent from `messages.create` in 1.0.0 and
+  current models reject them with a 400. OpenAI-compatible endpoints still honour it, so
+  routing through one restores the determinism knob the plan asked for and the vendor SDK
+  took away. The field is honoured by one provider and ignored by the other, which is
+  documented on the field rather than left to be discovered.
+- **The judge can stop sharing a family with the generator.** ENGINEERING.md requires that
+  a judge from the generator's own family be declared and its bias quantified. Generating
+  with one provider and judging with another removes that bias rather than measuring it —
+  a methodological improvement that happens to also be free.
+
+Three things it costs, stated rather than buried:
+
+- **Free tiers rotate model versions without notice**, which collides with pinned versions.
+  Partly mitigated: `Completion.model` records what the endpoint *reported serving*, not
+  what was requested, so a silent substitution shows up in the result record. There is a
+  test for exactly that.
+- **1,000 requests/day is tight** for a nightly ablation at 80 items across four arms. The
+  judgement cache absorbs most of it; a cold run would not fit comfortably.
+- **Free tiers generally train on submitted data.** Irrelevant here — the corpus is public
+  arXiv papers — but worth saying rather than not saying.
+
+Zero-rated models appear in `MODEL_RATES` at $0.00. That is the honest figure rather than a
+placeholder: a free-tier request costs nothing in money, and what it *does* cost is a
+request against a daily quota, which is a constraint on throughput rather than budget.
 
 ## Layout
 
