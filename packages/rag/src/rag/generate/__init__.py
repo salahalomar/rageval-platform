@@ -11,8 +11,10 @@ from rag.generate.client import (
     AnthropicClient,
     Completion,
     LLMClient,
+    OpenAICompatibleClient,
     ScriptedLLMClient,
     Usage,
+    client_for,
     cost_usd,
 )
 from rag.generate.prompt import INSUFFICIENT_EVIDENCE
@@ -24,11 +26,13 @@ __all__ = [
     "CitationBinding",
     "Completion",
     "LLMClient",
+    "OpenAICompatibleClient",
     "ScriptedLLMClient",
     "Usage",
     "answer_question",
     "answer_question_stream",
     "bind",
+    "client_for",
     "cost_usd",
     "parse_markers",
 ]
