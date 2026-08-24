@@ -327,7 +327,7 @@ what gets measured, what counts as honest naming, and what is not allowed to dri
 - [x] **3** Lexical + RRF fusion
 - [x] **4** Cross-encoder reranking
 - [x] **5** Generation, citations, refusal
-- [~] **6** Golden set — built and priced; generation not yet run
+- [x] **6** Golden set
 - [ ] **7** Eval harness and ablation table
 - [ ] **8** Frontend
 - [ ] **9** Ship
