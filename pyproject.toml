@@ -93,8 +93,8 @@ convention = "google"
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["packages/rag/src", "apps/api/src", "tests"]
-mypy_path = ["packages/rag/src", "apps/api/src"]
+files = ["packages/rag/src", "apps/api/src", "eval", "tests"]
+mypy_path = ["packages/rag/src", "apps/api/src", "."]
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
 
@@ -115,6 +115,9 @@ ignore_missing_imports = true
 # Tests
 # ---------------------------------------------------------------------------
 [tool.pytest.ini_options]
+# eval/ lives at the repository root rather than inside a package directory, so the
+# root has to be importable for `from eval.schema import ...` to resolve.
+pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "-q --strict-markers --strict-config"
 markers = [
