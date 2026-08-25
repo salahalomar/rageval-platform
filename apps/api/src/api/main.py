@@ -16,6 +16,8 @@ from rag.generate import answer_question
 from rag.generate.answer import Answer, answer_question_stream
 from rag.generate.client import AnthropicClient, GenerationError, LLMClient
 from rag.generate.logging_store import record
+from rag.retrieve import retrieve
+from rag.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,18 @@ class HealthResponse(BaseModel):
     status: Literal["ok", "degraded"]
     db: DatabaseHealth
     version: str
+    generation_configured: bool
+
+
+def _generation_configured() -> bool:
+    """Whether a credential exists for the answer endpoints.
+
+    Reported so the front end can disable generation up front rather than offering a
+    button that fails with a 502. It reads the setting only -- no request is made and no
+    key material is returned, because /health is public.
+    """
+    settings = get_settings()
+    return bool(settings.anthropic_api_key or settings.llm_api_key)
 
 
 class QueryRequest(BaseModel):
@@ -117,10 +131,27 @@ def health(response: Response) -> HealthResponse:
     the API and the eval runner on one code path.
     """
     db = check_health()
+    generation = _generation_configured()
     if not db.connected:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
-        return HealthResponse(status="degraded", db=db, version=rag_version)
-    return HealthResponse(status="ok", db=db, version=rag_version)
+        return HealthResponse(
+            status="degraded", db=db, version=rag_version, generation_configured=generation
+        )
+    return HealthResponse(
+        status="ok", db=db, version=rag_version, generation_configured=generation
+    )
+
+
+@app.get("/config/default", response_model=RetrievalConfig)
+def default_config() -> RetrievalConfig:
+    """The retrieval defaults, as the library defines them.
+
+    The config panel initialises itself from this rather than hard-coding the same numbers
+    in TypeScript. Restating them client-side would mean the front end could quietly
+    disagree with the library about what "default" means -- and the whole point of the
+    single frozen config object is that there is one answer to that question.
+    """
+    return RetrievalConfig()
 
 
 def _sources(answer: Answer) -> list[SourceBlock]:
@@ -142,6 +173,75 @@ def _sources(answer: Answer) -> list[SourceBlock]:
         )
         for index, candidate in enumerate(answer.candidates, start=1)
     ]
+
+
+class RetrieveRequest(BaseModel):
+    """Body for POST /retrieve."""
+
+    question: str = Field(min_length=1, max_length=2000)
+    config: RetrievalConfig = RetrievalConfig()
+
+
+class RetrieveResponse(BaseModel):
+    """Payload for POST /retrieve: what retrieval found, and what it cost."""
+
+    question: str
+    sources: list[SourceBlock]
+    refused: bool
+    reason: str | None
+    dense_count: int
+    lexical_count: int
+    fused_count: int
+    reranked: int | None
+    mean_rank_movement: float | None
+    timings_ms: dict[str, float]
+
+
+@app.post("/retrieve", response_model=RetrieveResponse)
+def retrieve_only(request: RetrieveRequest) -> RetrieveResponse:
+    """Run retrieval and return the ranked chunks, without generating an answer.
+
+    Exists because the most convincing thing this system can show a technical visitor --
+    toggling reranking and watching the results reorder -- is a property of retrieval
+    alone. Routing that through generation would spend money and add a network dependency
+    to a demonstration that needs neither, and would make the interesting part slower and
+    harder to see.
+
+    It is also what lets the whole front end work on a deployment with no model
+    credentials at all.
+    """
+    with connect() as conn:
+        result = retrieve(request.question, request.config, conn)
+
+    stats = result.rerank_stats
+    return RetrieveResponse(
+        question=request.question,
+        sources=[
+            SourceBlock(
+                marker=index,
+                chunk_id=candidate.chunk_id,
+                paper_id=candidate.paper_id,
+                paper_title=candidate.paper_title,
+                section_path=candidate.section_path,
+                page_start=candidate.page_start,
+                page_end=candidate.page_end,
+                char_start=candidate.char_start,
+                char_end=candidate.char_end,
+                content=candidate.content,
+                score=candidate.score,
+                rerank_score=candidate.rerank_score,
+            )
+            for index, candidate in enumerate(result.candidates, start=1)
+        ],
+        refused=result.refused,
+        reason=result.reason,
+        dense_count=result.dense_count,
+        lexical_count=result.lexical_count,
+        fused_count=result.fused_count,
+        reranked=stats.scored if stats else None,
+        mean_rank_movement=stats.mean_rank_movement if stats else None,
+        timings_ms=result.timings_ms,
+    )
 
 
 @app.post("/query", response_model=QueryResponse)
