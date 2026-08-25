@@ -20,6 +20,9 @@ data/models/
 # Node (Phase 8)
 node_modules/
 dist/
+*.tsbuildinfo
+apps/web/test-results/
+apps/web/playwright-report/
 
 # OS
 .DS_Store
