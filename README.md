@@ -45,6 +45,14 @@ uv run rag search "What is the effect of learning rate warmup on transformer tra
 `--compare` runs all three retrieval modes over the same query side by side. Any one of
 them is reachable on its own with `--mode {rrf,dense_only,lexical_only}`.
 
+Then the front end, on <http://localhost:5173>:
+
+```bash
+make web
+```
+
+It needs no model credential — see [The front end](#the-front-end).
+
 The corpus is pinned in [`infra/corpus/`](infra/corpus/) — rebuild the exact same one with
 `rag ingest --ids-file infra/corpus/cs-lg-cs-cl-150.txt`. A category search returns "the
 most recent 150", which is a different set of papers every day; the golden set will bind
@@ -413,12 +421,67 @@ Zero-rated models appear in `MODEL_RATES` at $0.00. That is the honest figure ra
 placeholder: a free-tier request costs nothing in money, and what it *does* cost is a
 request against a daily quota, which is a constraint on throughput rather than budget.
 
+## The front end
+
+React 18 + TypeScript + Vite, at `apps/web`. Two pages: a retrieval demo and the
+ablation table.
+
+**It works with no API key and spends nothing.** The most persuasive thing this system
+can show is a property of retrieval alone — turn the cross-encoder off and the same
+question reorders in front of you — so the demo's primary action is `POST /retrieve`,
+which runs the full retrieval stack and returns ranked chunks without generating
+anything. On the corpus above, that toggle is visible and large:
+
+| Cross-encoder | Total latency | Top result |
+|---|---|---|
+| on | 13,383 ms | Task Specialization Fine-Tuning… (rerank 0.286) |
+| off | 175 ms | Understanding Curriculum Learning… (rrf 0.0300) |
+
+Generation is a second button, and it is disabled rather than broken when no credential
+exists: `GET /health` reports `generation_configured`, and the page says so in words. A
+button that always fails teaches a visitor the system is broken rather than unconfigured.
+
+Three things are deliberate:
+
+- **The API types are generated, not written.** `npm run gen:api` (or `make api-types`)
+  regenerates `src/lib/schema.d.ts` from the running server's OpenAPI document. A field
+  renamed in Python fails the TypeScript build rather than failing in a browser in front
+  of somebody.
+- **Nothing restates the library's defaults.** The config panel initialises from
+  `GET /config/default`, which returns `RetrievalConfig()` itself. The point of one frozen
+  config object is that there is one answer to what "default" means.
+- **The `/eval` page reads the committed result JSON directly** out of `eval/results/`,
+  not a copy. Row order comes from `eval/results/index.json`, which `eval/report.py`
+  writes alongside the README table — so the page and the README cannot disagree about
+  which arm goes where, and neither sorts by score.
+
+Highlighting in a source block marks **query terms, not the model's attribution**. The
+system does not record which characters a claim came from, and highlighting a span the
+generator never pointed at would be a convincing flourish standing in for a measurement.
+
+If port 5173 is taken, set `WEB_PORT`. Vite runs with `strictPort` on purpose: without
+it, a second Vite project binds the wildcard address, loses the race to `localhost`, and
+silently serves the neighbouring app with no error anywhere.
+
+```bash
+WEB_PORT=5175 make web
+```
+
+The front end runs on the host rather than in a container — Vite needs nothing a
+container provides. `docker compose --profile web up web` exists for a machine with no
+Node, and is never built by `make dev`.
+
+`make web-check` lints and type-checks it. `make web-test` runs the Playwright smoke
+tests, which need a live stack with an ingested corpus and so are deliberately not part of
+the pull-request gate.
+
 ## Layout
 
 | Path | What lives here |
 |---|---|
 | `packages/rag/` | The library — ingestion, indexing, retrieval, generation. Imports nothing from `apps/`. |
 | `apps/api/` | FastAPI. A transport layer with no retrieval logic in it. |
+| `apps/web/` | React + Vite. Types generated from the API's OpenAPI document. |
 | `infra/migrations/` | Numbered, forward-only SQL. Never edited once applied. |
 | `eval/` | Golden set, metrics, runner, ablation matrix. *(Phases 6–7)* |
 
@@ -440,7 +503,7 @@ what gets measured, what counts as honest naming, and what is not allowed to dri
 - [x] **5** Generation, citations, refusal
 - [x] **6** Golden set
 - [x] **7** Eval harness and ablation table
-- [ ] **8** Frontend
+- [x] **8** Frontend — retrieval demo, live config panel, ablation table
 - [ ] **9** Ship
 
 The ablation table replaces this section once Phase 7 lands.
