@@ -1,0 +1,64 @@
+{
+  "columns": [
+    {
+      "key": "recall@1",
+      "label": "R@1"
+    },
+    {
+      "key": "recall@5",
+      "label": "R@5"
+    },
+    {
+      "key": "mrr@10",
+      "label": "MRR@10"
+    },
+    {
+      "key": "ndcg@10",
+      "label": "nDCG@10"
+    }
+  ],
+  "runs": [
+    {
+      "arm": "lexical-only",
+      "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+      "git_dirty": true,
+      "started_at": "2026-08-24T00:40:47.275264+00:00",
+      "file": "lexical-only--01c29b59.json"
+    },
+    {
+      "arm": "dense-small",
+      "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+      "git_dirty": true,
+      "started_at": "2026-08-24T00:40:49.205068+00:00",
+      "file": "dense-small--01c29b59.json"
+    },
+    {
+      "arm": "hybrid-rrf",
+      "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+      "git_dirty": true,
+      "started_at": "2026-08-24T00:40:59.174502+00:00",
+      "file": "hybrid-rrf--01c29b59.json"
+    },
+    {
+      "arm": "hybrid-rerank",
+      "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+      "git_dirty": true,
+      "started_at": "2026-08-24T00:41:01.563602+00:00",
+      "file": "hybrid-rerank--01c29b59.json"
+    },
+    {
+      "arm": "rrf-k20",
+      "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+      "git_dirty": true,
+      "started_at": "2026-08-24T00:42:42.835355+00:00",
+      "file": "rrf-k20--01c29b59.json"
+    },
+    {
+      "arm": "rrf-k120",
+      "git_sha": "01c29b597bcfecdd36aa7e28d166ae013c0f613d",
+      "git_dirty": true,
+      "started_at": "2026-08-24T00:44:15.962432+00:00",
+      "file": "rrf-k120--01c29b59.json"
+    }
+  ]
+}

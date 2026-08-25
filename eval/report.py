@@ -25,6 +25,12 @@ logger = logging.getLogger(__name__)
 START_MARKER = "<!-- ABLATION-TABLE:START -->"
 END_MARKER = "<!-- ABLATION-TABLE:END -->"
 
+# A machine-readable sibling of the markdown table, written next to the results so the web
+# app can render the same rows in the same order without restating ARM_ORDER in TypeScript.
+# A third copy of the ordering would drift, and the drift would be invisible: the table
+# would still render, just telling a different story than the README.
+MANIFEST_NAME = "index.json"
+
 # The order arms appear in, least to most machinery, so the table reads as a story:
 # what does lexical alone do, does dense beat it, does fusing help, does reranking help
 # on top. Filename order would sort them alphabetically and destroy that reading, and an
@@ -99,6 +105,8 @@ def load_results(directory: Path) -> list[RunResult]:
     """Read every result JSON in a directory, newest run per arm."""
     by_arm: dict[str, tuple[str, RunResult]] = {}
     for path in sorted(directory.glob("*.json")):
+        if path.name == MANIFEST_NAME:
+            continue
         payload: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
         result = RunResult(**payload)
         existing = by_arm.get(result.arm)
@@ -112,6 +120,31 @@ def load_results(directory: Path) -> list[RunResult]:
         (result for _, result in by_arm.values()),
         key=lambda result: (position(result.arm), result.arm),
     )
+
+
+def write_manifest(results: Sequence[RunResult], directory: Path) -> Path:
+    """Write the ordering and column choice the markdown table uses, as JSON.
+
+    Exists so that a second renderer -- the `/eval` page in the web app -- shows the same
+    arms in the same order for the same reason, rather than sorting alphabetically or by
+    score and quietly telling a different story than the README.
+    """
+    path = directory / MANIFEST_NAME
+    payload = {
+        "columns": [{"key": key, "label": label} for key, label in COLUMNS],
+        "runs": [
+            {
+                "arm": result.arm,
+                "git_sha": result.git_sha,
+                "git_dirty": result.git_dirty,
+                "started_at": result.started_at,
+                "file": f"{result.arm}--{result.git_sha[:8]}.json",
+            }
+            for result in results
+        ],
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return path
 
 
 def inject(readme: Path, table: str) -> bool:
@@ -147,8 +180,10 @@ def main(argv: list[str] | None = None) -> int:
 
     table = render_table(results)
     print(table)
+    manifest = write_manifest(results, args.results_dir)
+    print(f"\nwrote {manifest}", file=sys.stderr)
     if args.inject and inject(args.readme, table):
-        print(f"\ninjected into {args.readme}", file=sys.stderr)
+        print(f"injected into {args.readme}", file=sys.stderr)
     return 0
 
 
