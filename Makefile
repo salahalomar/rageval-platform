@@ -5,7 +5,8 @@ MIGRATIONS_DIR := infra/migrations
 
 .DEFAULT_GOAL := help
 .PHONY: help dev down migrate migrate-status lint fmt typecheck test test-nomodel check \
-        logs psql clean golden golden-dry-run verify eval gate ablate report cost kappa
+        logs psql clean golden golden-dry-run verify eval gate ablate report cost kappa \
+        web web-install web-build web-check web-test api-types
 
 help: ## Show available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -17,7 +18,7 @@ dev: ## Build and start Postgres + API, waiting until both report healthy
 	$(COMPOSE) up -d --build --wait
 	@echo "api:      http://localhost:$${API_PORT:-8000}/health"
 	@echo "postgres: localhost:$${POSTGRES_PORT:-5432}"
-	@echo "next:     make migrate"
+	@echo "next:     make migrate, then make web"
 
 down: ## Stop the stack (keeps the pgdata volume)
 	$(COMPOSE) down
@@ -67,6 +68,31 @@ kappa: ## Report judge-versus-human agreement from committed hand labels
 
 verify: ## Review candidates by hand; the only thing that writes v1.jsonl
 	$(UV) run python -m eval.verify_cli --reviewer "$${REVIEWER:-$$(git config user.name)}"
+
+# --- web --------------------------------------------------------------------
+#
+# The front end runs on the host rather than in a container. Vite needs nothing a
+# container provides, and the alternative is a Node image nobody benefits from. Set
+# WEB_PORT if 5173 is already taken -- Vite is configured with strictPort so a clash
+# fails loudly instead of quietly serving a neighbouring project.
+
+web: web-install ## Serve the front end (needs `make dev` for the API)
+	cd apps/web && npm run dev
+
+web-install: ## Install front-end dependencies if they are missing
+	@test -d apps/web/node_modules || (cd apps/web && npm ci)
+
+web-build: web-install ## Type-check and build the production bundle
+	cd apps/web && npm run build
+
+web-check: web-install ## Lint and type-check the front end
+	cd apps/web && npm run lint && npm run typecheck
+
+web-test: web-install ## Playwright smoke tests (needs a live stack with a corpus)
+	cd apps/web && npm run test:e2e
+
+api-types: ## Regenerate the TypeScript API types from the running API
+	cd apps/web && npm run gen:api
 
 # --- quality ----------------------------------------------------------------
 

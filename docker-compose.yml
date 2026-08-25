@@ -65,5 +65,27 @@ services:
       retries: 20
       start_period: 5s
 
+  # Opt-in: `docker compose --profile web up web`. Left out of the default stack on
+  # purpose. Vite runs perfectly well on the host, and a Node image for something that
+  # needs no container is half a gigabyte of disk bought for nothing. `make web` is the
+  # path this repository actually recommends; this service exists for a machine with no
+  # Node installed.
+  web:
+    profiles: ["web"]
+    image: node:22-alpine
+    working_dir: /app/apps/web
+    environment:
+      # Inside the network the API is reachable by service name, not on localhost.
+      VITE_API_TARGET: http://api:8000
+      WEB_PORT: "5173"
+    ports:
+      - "${WEB_PORT:-5173}:5173"
+    volumes:
+      - .:/app
+    command: sh -c "npm ci && npm run dev"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   pgdata:
