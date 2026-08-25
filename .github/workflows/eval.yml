@@ -17,6 +17,12 @@ concurrency:
   group: eval
   cancel-in-progress: false
 
+# This job commits its own results, and the default token is read-only. Without this the
+# whole ablation runs to completion and then dies on `git push` with exit 128 -- which is
+# what happened on the first two nightly runs.
+permissions:
+  contents: write
+
 jobs:
   ablate:
     name: full ablation
@@ -42,9 +48,13 @@ jobs:
       DATABASE_URL: postgresql://rag:rag@localhost:5432/rag
 
     steps:
-      - uses: actions/checkout@v4
+      # Full history, because the commit step rebases before pushing and a depth-1
+      # clone has nothing to rebase onto.
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v6
         with:
           version: "0.9.12"
           enable-cache: true
@@ -83,10 +93,18 @@ jobs:
       - name: Regenerate the README table
         run: uv run python -m eval.report --inject
 
+      # Rebases before pushing because a nightly run takes the better part of an hour,
+      # and main can move underneath it. Results are append-only files, so a rebase is
+      # safe; a failure here should be a failure, not a force-push over someone's work.
       - name: Commit results
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add eval/results README.md
-          git diff --staged --quiet || git commit -m "eval: nightly ablation results"
-          git push
+          if git diff --staged --quiet; then
+            echo "the ablation produced nothing new -- nothing to commit"
+            exit 0
+          fi
+          git commit -m "eval: nightly ablation results"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
