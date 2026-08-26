@@ -23,6 +23,7 @@ from rag.ingest.chunk import chunk_document
 from rag.ingest.parse import parse_pdf
 from rag.ingest.sections import detect_sections
 from rag.ingest.tokenization import WhitespaceTokenCounter
+from rag.settings import get_settings
 
 pytestmark = pytest.mark.integration
 
@@ -145,8 +146,30 @@ def test_health_endpoint_reports_ok(client: TestClient) -> None:
     response = client.get("/health")
     assert response.status_code == 200
     body = response.json()
-    assert set(body) == {"status", "db", "version"}
+    assert set(body) == {"status", "db", "version", "generation_configured"}
     assert body["status"] == "ok"
     assert body["db"]["connected"] is True
     assert body["db"]["pgvector_version"] is not None
     assert body["version"]
+    assert isinstance(body["generation_configured"], bool)
+
+
+def test_health_never_leaks_the_credential_itself(client: TestClient) -> None:
+    # /health is public and unauthenticated. It may say *whether* a key exists, because
+    # the front end needs that to disable generation rather than offer a button that
+    # 502s -- but the value must never appear, in any field, at any depth.
+    raw = client.get("/health").text
+    settings = get_settings()
+    for secret in (settings.anthropic_api_key, settings.llm_api_key):
+        if secret:
+            assert secret not in raw
+    assert "key" not in raw.lower()
+
+
+def test_default_config_endpoint_returns_the_librarys_own_defaults(client: TestClient) -> None:
+    # The front end initialises its config panel from this instead of restating the
+    # numbers in TypeScript. If the two ever disagree about what "default" means, the
+    # demo stops describing the system the eval harness measures.
+    response = client.get("/config/default")
+    assert response.status_code == 200
+    assert response.json() == RetrievalConfig().model_dump(mode="json")
