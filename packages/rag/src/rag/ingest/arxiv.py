@@ -21,7 +21,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 API_URL = "http://export.arxiv.org/api/query"
-USER_AGENT = "rag-eval-platform/0.1 (https://github.com/salahalomar/rag-eval-platform)"
+USER_AGENT = "rag-eval-platform/0.1 (https://github.com/salahalomar/rageval-platform)"
 
 ATOM = "{http://www.w3.org/2005/Atom}"
 ARXIV_NS = "{http://arxiv.org/schemas/atom}"

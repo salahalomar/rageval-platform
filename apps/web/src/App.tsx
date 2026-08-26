@@ -13,7 +13,7 @@ export default function App() {
             ask
           </NavLink>
           <NavLink to="/eval">evaluation</NavLink>
-          <a href="https://github.com/salahalomar/rag-eval-platform">source</a>
+          <a href="https://github.com/salahalomar/rageval-platform">source</a>
         </nav>
       </header>
       <Routes>
