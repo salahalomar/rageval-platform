@@ -137,9 +137,7 @@ def health(response: Response) -> HealthResponse:
         return HealthResponse(
             status="degraded", db=db, version=rag_version, generation_configured=generation
         )
-    return HealthResponse(
-        status="ok", db=db, version=rag_version, generation_configured=generation
-    )
+    return HealthResponse(status="ok", db=db, version=rag_version, generation_configured=generation)
 
 
 @app.get("/config/default", response_model=RetrievalConfig)
