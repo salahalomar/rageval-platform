@@ -1,0 +1,401 @@
+{
+  "arm": "rrf-k120",
+  "config": {
+    "chunk_overlap_pct": 0.15,
+    "chunk_tokens": 512,
+    "contextual_headers": true,
+    "dense_enabled": true,
+    "dense_top_k": 50,
+    "drop_figure_only_pages": true,
+    "drop_references": true,
+    "embedding_model": "BAAI/bge-small-en-v1.5",
+    "final_top_k": 5,
+    "fusion": "rrf",
+    "hnsw_ef_search": 400,
+    "lexical_enabled": true,
+    "lexical_top_k": 50,
+    "rerank_enabled": true,
+    "rerank_model": "BAAI/bge-reranker-base",
+    "rerank_top_n": 50,
+    "rrf_k": 120,
+    "score_floor": 0.05
+  },
+  "correct_refusals": 1,
+  "duration_s": 418.18,
+  "false_refusals": 0,
+  "generation": null,
+  "git_dirty": true,
+  "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
+  "golden_file": "eval/golden/hard_cases.jsonl",
+  "golden_items": 15,
+  "items": [
+    {
+      "answerable": true,
+      "item_id": "h-001",
+      "metrics": {},
+      "question": "What temporal resolution per volume resulted from binning the acquired spokes to 34 spokes per frame in the unsupervised DCE MRI reconstruction work?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        283,
+        275,
+        277,
+        274,
+        280
+      ],
+      "timings_ms": {
+        "dense_ms": 7.768,
+        "embed_query_ms": 26.76,
+        "fusion_ms": 0.351,
+        "lexical_ms": 163.334,
+        "rerank_ms": 27809.532
+      },
+      "type": "numeric"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-002",
+      "metrics": {},
+      "question": "What undersampling factor relative to the Nyquist criterion did the dynamic contrast enhanced MRI reconstruction use at 448x448 resolution?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        283,
+        274,
+        276,
+        379,
+        277
+      ],
+      "timings_ms": {
+        "dense_ms": 7.638,
+        "embed_query_ms": 25.14,
+        "fusion_ms": 0.246,
+        "lexical_ms": 160.798,
+        "rerank_ms": 27335.954
+      },
+      "type": "numeric"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-003",
+      "metrics": {},
+      "question": "How many tokenizers were available when correlating fertility against bits-per-byte in the tokenizer evaluation suite, and why did that number limit the analysis?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        107,
+        102,
+        4495,
+        4500,
+        76
+      ],
+      "timings_ms": {
+        "dense_ms": 7.71,
+        "embed_query_ms": 26.637,
+        "fusion_ms": 0.324,
+        "lexical_ms": 202.077,
+        "rerank_ms": 27302.37
+      },
+      "type": "numeric"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-004",
+      "metrics": {},
+      "question": "How many deterministic checks does the tokenizer evaluation suite's sanity-check module run?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        82,
+        92,
+        78,
+        89,
+        107
+      ],
+      "timings_ms": {
+        "dense_ms": 8.102,
+        "embed_query_ms": 23.866,
+        "fusion_ms": 0.586,
+        "lexical_ms": 107.375,
+        "rerank_ms": 27438.589
+      },
+      "type": "numeric"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-005",
+      "metrics": {},
+      "question": "How does the standardisation applied to the intrinsic tokenizer metric relate to the difficulty the authors report in detecting a within-language association?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        102,
+        96,
+        80,
+        104,
+        98
+      ],
+      "timings_ms": {
+        "dense_ms": 8.738,
+        "embed_query_ms": 25.101,
+        "fusion_ms": 0.345,
+        "lexical_ms": 178.626,
+        "rerank_ms": 27546.659
+      },
+      "type": "multi_hop"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-006",
+      "metrics": {},
+      "question": "Why does normalising bits-per-byte by bytes not prevent fragmentation from showing up in the fertility comparison?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        101,
+        100,
+        80,
+        87,
+        97
+      ],
+      "timings_ms": {
+        "dense_ms": 8.995,
+        "embed_query_ms": 23.226,
+        "fusion_ms": 0.408,
+        "lexical_ms": 98.393,
+        "rerank_ms": 27567.778
+      },
+      "type": "multi_hop"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-007",
+      "metrics": {},
+      "question": "How does the primitive representation separate static anatomy from contrast dynamics in the MRI reconstruction method?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        274,
+        277,
+        287,
+        280,
+        276
+      ],
+      "timings_ms": {
+        "dense_ms": 7.49,
+        "embed_query_ms": 22.425,
+        "fusion_ms": 0.232,
+        "lexical_ms": 86.241,
+        "rerank_ms": 27537.451
+      },
+      "type": "multi_hop"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-008",
+      "metrics": {},
+      "question": "What acquisition problem motivates the primitive representation approach to MRI, and by what mechanism does the representation address it?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        274,
+        380,
+        277,
+        275,
+        287
+      ],
+      "timings_ms": {
+        "dense_ms": 8.025,
+        "embed_query_ms": 24.247,
+        "fusion_ms": 0.389,
+        "lexical_ms": 70.21,
+        "rerank_ms": 27464.685
+      },
+      "type": "multi_hop"
+    },
+    {
+      "answerable": false,
+      "item_id": "h-009",
+      "metrics": {},
+      "question": "What were Tesla's Q3 2025 vehicle delivery numbers?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        5894,
+        5895,
+        3000,
+        6359,
+        3022
+      ],
+      "timings_ms": {
+        "dense_ms": 7.836,
+        "embed_query_ms": 21.335,
+        "fusion_ms": 0.416,
+        "lexical_ms": 29.346,
+        "rerank_ms": 28209.08
+      },
+      "type": "unanswerable"
+    },
+    {
+      "answerable": false,
+      "item_id": "h-010",
+      "metrics": {},
+      "question": "What learning rate schedule did the authors of the tokenizer evaluation suite use to pretrain their 7B parameter model?",
+      "refusal_reason": "below_score_floor",
+      "refused": true,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [],
+      "timings_ms": {
+        "dense_ms": 10.469,
+        "embed_query_ms": 26.036,
+        "fusion_ms": 0.421,
+        "lexical_ms": 195.868,
+        "rerank_ms": 27797.017
+      },
+      "type": "unanswerable"
+    },
+    {
+      "answerable": false,
+      "item_id": "h-011",
+      "metrics": {},
+      "question": "Which of the indexed reconstruction methods achieved the lowest reported reconstruction error on the fastMRI knee benchmark?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        2513,
+        2510,
+        379,
+        380,
+        384
+      ],
+      "timings_ms": {
+        "dense_ms": 9.239,
+        "embed_query_ms": 23.996,
+        "fusion_ms": 0.4,
+        "lexical_ms": 98.613,
+        "rerank_ms": 28029.636
+      },
+      "type": "unanswerable"
+    },
+    {
+      "answerable": false,
+      "item_id": "h-012",
+      "metrics": {},
+      "question": "What accuracy did the self-improving agents paper report after extending training to one thousand task orderings?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        43,
+        22,
+        21,
+        45,
+        23
+      ],
+      "timings_ms": {
+        "dense_ms": 9.316,
+        "embed_query_ms": 22.193,
+        "fusion_ms": 0.537,
+        "lexical_ms": 198.328,
+        "rerank_ms": 27643.083
+      },
+      "type": "unanswerable"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-013",
+      "metrics": {},
+      "question": "Which subword algorithm is credited with both providing an inductive bias for learning and improving inference efficiency?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        79,
+        4499,
+        4470,
+        1535,
+        2275
+      ],
+      "timings_ms": {
+        "dense_ms": 7.99,
+        "embed_query_ms": 24.39,
+        "fusion_ms": 0.345,
+        "lexical_ms": 104.735,
+        "rerank_ms": 27747.344
+      },
+      "type": "distractor"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-014",
+      "metrics": {},
+      "question": "Which prior work documented systematic cross-lingual unfairness arising specifically at the tokenization stage?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        80,
+        83,
+        4467,
+        109,
+        86
+      ],
+      "timings_ms": {
+        "dense_ms": 7.778,
+        "embed_query_ms": 22.92,
+        "fusion_ms": 0.364,
+        "lexical_ms": 122.548,
+        "rerank_ms": 27758.452
+      },
+      "type": "distractor"
+    },
+    {
+      "answerable": true,
+      "item_id": "h-015",
+      "metrics": {},
+      "question": "What metric measures how closely a tokenizer's segmentation matches morphological units, and who introduced it?",
+      "refusal_reason": null,
+      "refused": false,
+      "relevant_chunk_ids": [],
+      "retrieved_chunk_ids": [
+        80,
+        83,
+        81,
+        4477,
+        4499
+      ],
+      "timings_ms": {
+        "dense_ms": 7.899,
+        "embed_query_ms": 25.623,
+        "fusion_ms": 0.271,
+        "lexical_ms": 86.656,
+        "rerank_ms": 27886.301
+      },
+      "type": "distractor"
+    }
+  ],
+  "latency_ms": {
+    "mean": 27831.4,
+    "p50": 27873.5,
+    "p95": 28161.9
+  },
+  "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0
+  },
+  "python": "3.12.12",
+  "refusals": 1,
+  "scored_items": 0,
+  "started_at": "2026-08-31T09:39:43.012819+00:00",
+  "unanswerable_items": 4
+}

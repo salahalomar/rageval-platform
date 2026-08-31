@@ -20,45 +20,45 @@
   "runs": [
     {
       "arm": "lexical-only",
-      "git_sha": "e54106a40c9fc1e3acad64c1595610c5339177e0",
+      "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
       "git_dirty": false,
-      "started_at": "2026-08-30T09:02:21.293376+00:00",
-      "file": "lexical-only--e54106a4.json"
+      "started_at": "2026-08-31T09:25:29.761905+00:00",
+      "file": "lexical-only--999b3d16.json"
     },
     {
       "arm": "dense-small",
-      "git_sha": "e54106a40c9fc1e3acad64c1595610c5339177e0",
+      "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
       "git_dirty": true,
-      "started_at": "2026-08-30T09:02:23.321157+00:00",
-      "file": "dense-small--e54106a4.json"
+      "started_at": "2026-08-31T09:25:31.672132+00:00",
+      "file": "dense-small--999b3d16.json"
     },
     {
       "arm": "hybrid-rrf",
-      "git_sha": "e54106a40c9fc1e3acad64c1595610c5339177e0",
+      "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
       "git_dirty": true,
-      "started_at": "2026-08-30T09:02:30.412952+00:00",
-      "file": "hybrid-rrf--e54106a4.json"
+      "started_at": "2026-08-31T09:25:37.814704+00:00",
+      "file": "hybrid-rrf--999b3d16.json"
     },
     {
       "arm": "hybrid-rerank",
-      "git_sha": "e54106a40c9fc1e3acad64c1595610c5339177e0",
+      "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
       "git_dirty": true,
-      "started_at": "2026-08-30T09:02:32.904007+00:00",
-      "file": "hybrid-rerank--e54106a4.json"
+      "started_at": "2026-08-31T09:25:40.195862+00:00",
+      "file": "hybrid-rerank--999b3d16.json"
     },
     {
       "arm": "rrf-k20",
-      "git_sha": "e54106a40c9fc1e3acad64c1595610c5339177e0",
+      "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
       "git_dirty": true,
-      "started_at": "2026-08-30T09:09:29.901366+00:00",
-      "file": "rrf-k20--e54106a4.json"
+      "started_at": "2026-08-31T09:32:43.472474+00:00",
+      "file": "rrf-k20--999b3d16.json"
     },
     {
       "arm": "rrf-k120",
-      "git_sha": "e54106a40c9fc1e3acad64c1595610c5339177e0",
+      "git_sha": "999b3d165815e57da84c229c0c47dc5c0eead910",
       "git_dirty": true,
-      "started_at": "2026-08-30T09:16:23.130386+00:00",
-      "file": "rrf-k120--e54106a4.json"
+      "started_at": "2026-08-31T09:39:43.012819+00:00",
+      "file": "rrf-k120--999b3d16.json"
     }
   ]
 }
